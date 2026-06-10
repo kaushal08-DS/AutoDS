@@ -26,19 +26,31 @@ uploaded_file = st.file_uploader(
 
 if uploaded_file is not None:
 
-    # Initialize session state
-    if "df" not in st.session_state:
+    file_content = uploaded_file.getvalue()
+
+    if (
+        "file_content" not in st.session_state
+        or st.session_state.file_content != file_content
+    ):
+
+        st.session_state.file_content = file_content
+
         try:
             st.session_state.df = pd.read_csv(
                 uploaded_file,
                 encoding="utf-8"
             )
+
         except UnicodeDecodeError:
+
+            uploaded_file.seek(0)
+
             try:
                 st.session_state.df = pd.read_csv(
                     uploaded_file,
                     encoding="latin1"
                 )
+
             except Exception:
                 st.error(
                     "Unable to read the file. Please upload a valid CSV."
