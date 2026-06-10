@@ -410,6 +410,27 @@ if uploaded_file is not None:
                 
                 # 🔥 BEFORE train-test split (this is what I meant)
                 y = df[target_column]
+
+                # Check missing values
+                if X.isnull().sum().sum() > 0:
+                    st.warning(
+                        "⚠ Dataset contains missing values. Please use the Missing Value Treatment section before training."
+                    )
+                    st.stop()
+
+                # Check infinite values
+                if np.isinf(X.select_dtypes(include=np.number)).sum().sum() > 0:
+                    st.warning(
+                        "⚠ Dataset contains infinite values."
+                    )
+                    st.stop()
+
+                # Check empty dataset
+                if len(X) == 0:
+                    st.warning(
+                        "⚠ No rows available for training."
+                    )
+                    st.stop()
                 
                 X_train, X_test, y_train, y_test = train_test_split(
                     X,
