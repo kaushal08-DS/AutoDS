@@ -201,20 +201,46 @@ if uploaded_file is not None:
 
         st.dataframe(value_counts)
 
-        fig, ax = plt.subplots(figsize=(4, 2))
+        unique_count = df[selected_cat].nunique()
 
-        value_counts.plot(
-            kind="bar",
-            ax=ax
-        )
+        # Too many categories -> don't plot
+        if unique_count > 30:
 
-        ax.set_title(
-            f"Distribution of {selected_cat}"
-        )
+            st.info(
+                f"{selected_cat} has {unique_count} unique values. "
+                "Chart is skipped because it would be unreadable."
+            )
 
-        left, center, right = st.columns([2, 3, 2])
-        with center:
-            st.pyplot(fig)
+        # Plot normally
+        else:
+
+        # Dynamic width based on number of categories
+            width = max(8, min(unique_count * 0.5, 20))
+
+            fig, ax = plt.subplots(
+                figsize=(width, 4)
+            )
+
+            value_counts.plot(
+                kind="bar",
+                ax=ax
+            )
+
+            ax.set_title(
+                f"Distribution of {selected_cat}"
+            )
+
+            plt.xticks(
+                rotation=45,
+                ha="right"
+            )
+
+            plt.tight_layout()
+
+            left, center, right = st.columns([2, 3, 2])
+
+            with center:
+                st.pyplot(fig)
 
     else:
         st.info(
@@ -343,56 +369,66 @@ if uploaded_file is not None:
     
     if len(numeric_cols) == 0:
         st.warning("No numeric columns for outlier detection")
+
     else:
         outlier_column = st.selectbox(
             "Select Column for Outlier Detection",
             numeric_cols
         )
 
-    Q1 = df[outlier_column].quantile(0.25)
-    Q3 = df[outlier_column].quantile(0.75)
-    IQR = Q3 - Q1
-    lower_bound = Q1 - 1.5 * IQR
-    upper_bound = Q3 + 1.5 * IQR
+        Q1 = df[outlier_column].quantile(0.25)
+        Q3 = df[outlier_column].quantile(0.75)
 
-    outliers = df[
-        (df[outlier_column] < lower_bound)
-        |
-        (df[outlier_column] > upper_bound)
-    ]
-    st.write(
-        f"Number of Outliers: {len(outliers)}"
-    )
+        IQR = Q3 - Q1
 
-    if len(outliers) > 0:
-        st.dataframe(outliers.head())
-    
-    fig, ax = plt.subplots(figsize=(4, 2))
-    sns.boxplot(
-        x=df[outlier_column].dropna(),
-        ax=ax
-    )
-    ax.set_title(
-        f"Outliers in {outlier_column}"
-    )
-    plt.tight_layout()
-    left, center, right = st.columns([2, 3, 2])
-    
-    with center:
-        st.pyplot(fig)
+        lower_bound = Q1 - 1.5 * IQR
+        upper_bound = Q3 + 1.5 * IQR
 
-    if st.button("Remove Outliers"):
-        df = df[
-            (df[outlier_column] >= lower_bound)
-            &
-            (df[outlier_column] <= upper_bound)
+        outliers = df[
+            (df[outlier_column] < lower_bound)
+            |
+            (df[outlier_column] > upper_bound)
         ]
-        
-        st.session_state.df = df
-        st.success(
-            f"{len(outliers)} outliers removed!"
+
+        st.write(
+            f"Number of Outliers: {len(outliers)}"
         )
-        st.rerun()
+
+        if len(outliers) > 0:
+            st.dataframe(outliers.head())
+
+            fig, ax = plt.subplots(figsize=(4, 2))
+
+        sns.boxplot(
+            x=df[outlier_column].dropna(),
+            ax=ax
+        )
+
+        ax.set_title(
+            f"Outliers in {outlier_column}"
+        )
+
+        plt.tight_layout()
+
+        left, center, right = st.columns([2, 3, 2])
+
+        with center:
+            st.pyplot(fig)
+
+        if st.button("Remove Outliers"):
+            df = df[
+                (df[outlier_column] >= lower_bound)
+                &
+                (df[outlier_column] <= upper_bound)
+            ]
+
+            st.session_state.df = df
+
+            st.success(
+                f"{len(outliers)} outliers removed!"
+            )
+
+            st.rerun()
     
     # Machine Learning Preparation
     st.subheader("Machine Learning")
