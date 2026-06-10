@@ -28,7 +28,22 @@ if uploaded_file is not None:
 
     # Initialize session state
     if "df" not in st.session_state:
-        st.session_state.df = pd.read_csv(uploaded_file)
+        try:
+            st.session_state.df = pd.read_csv(
+                uploaded_file,
+                encoding="utf-8"
+            )
+        except UnicodeDecodeError:
+            try:
+                st.session_state.df = pd.read_csv(
+                    uploaded_file,
+                    encoding="latin1"
+                )
+            except Exception:
+                st.error(
+                    "Unable to read the file. Please upload a valid CSV."
+                )
+                st.stop()
 
     df = st.session_state.df
 
